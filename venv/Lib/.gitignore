@@ -1,0 +1,11 @@
+venv/
+.env
+reviews.db
+
+__pycache__/
+*.pyc
+
+.idea/
+.vscode/
+
+*.log
