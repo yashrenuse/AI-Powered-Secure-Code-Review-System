@@ -13,6 +13,8 @@ from datetime import datetime
 import subprocess
 import tempfile
 
+import joblib
+
 
 # ============================================
 # LOAD ENV VARIABLES
@@ -31,6 +33,12 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 github_client = Github(GITHUB_TOKEN)
 
 groq_client = Groq(api_key=GROQ_API_KEY)
+
+ml_model = joblib.load(
+    "best_security_model.pkl"
+)
+
+print("ML MODEL LOADED SUCCESSFULLY")
 
 
 # ============================================
@@ -191,13 +199,20 @@ async def github_webhook(request: Request):
         # ============================================
 
         for file in files:
-
+            
             print("\n==============================")
             print(f"File: {file.filename}")
             print("==============================")
 
             patch_content = file.patch
 
+            predicted_severity = ml_model.predict(
+                [patch_content]
+            )[0]
+
+            print(
+                f"ML Prediction: {predicted_severity}"
+            )
             print("\nChanged Code:\n")
             print(patch_content)
 
@@ -399,13 +414,7 @@ Overall Summary:
             # DETECT SEVERITY
             # ============================================
 
-            severity = "LOW"
-
-            if "HIGH" in review_text:
-                severity = "HIGH"
-
-            elif "MEDIUM" in review_text:
-                severity = "MEDIUM"
+            severity = predicted_severity
 
             # ============================================
             # SAVE TO DATABASE
@@ -451,7 +460,13 @@ Overall Summary:
             # ADD TO FINAL COMMENT
             # ============================================
 
-            final_review += f"## 📄 File: `{file.filename}`\n\n"
+            final_review += (
+                f"## 📄 File: `{file.filename}`\n\n"
+                )
+            final_review += (
+                f"### 🤖 ML Predicted Severity: "
+                f"**{predicted_severity}**\n\n"
+                )
 
             final_review += review_text + "\n\n---\n\n"
 

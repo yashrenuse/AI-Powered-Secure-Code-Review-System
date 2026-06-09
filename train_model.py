@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import joblib
 
 from sklearn.model_selection import (
     train_test_split,
@@ -38,6 +39,22 @@ df = pd.read_csv(
 )
 
 # ============================================
+# MAP SEVERITY LEVELS
+# ============================================
+
+df["Severity"] = df["Severity"].replace({
+
+    "Critical": "HIGH",
+
+    "High": "HIGH",
+
+    "Moderate": "MEDIUM",
+
+    "Low": "LOW"
+
+})
+
+# ============================================
 # CLEAN DATA
 # ============================================
 
@@ -70,6 +87,10 @@ print(df.columns)
 print("\n===== SEVERITY DISTRIBUTION =====\n")
 
 print(df["Severity"].value_counts())
+
+print("\n===== MAPPED SEVERITY LEVELS =====\n")
+
+print(df["Severity"].unique())
 
 # ============================================
 # FEATURES AND LABELS
@@ -130,6 +151,8 @@ models = {
 # ============================================
 
 results = []
+best_pipeline = None
+best_f1 = 0
 
 # ============================================
 # TRAIN MODELS
@@ -198,6 +221,10 @@ for model_name, model in models.items():
         y_pred,
         average="weighted"
     )
+
+    if f1 > best_f1:
+        best_f1 = f1
+        best_pipeline = pipeline
 
     # CROSS VALIDATION
 
@@ -373,4 +400,17 @@ plt.show()
 
 print(
     "\nResults saved to model_comparison_results.csv"
+)
+
+# ============================================
+# SAVE BEST MODEL
+# ============================================
+
+joblib.dump(
+    best_pipeline,
+    "best_security_model.pkl"
+)
+
+print(
+    "\nBest model saved as best_security_model.pkl"
 )
